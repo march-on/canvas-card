@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>MatchGame</title>
+    <h1>Match Game</h1>
+
+    <style>
+        @font-face {
+            font-family: myFont;      /*设置文本的字体名称*/
+            src: url(styles/fontCSS3.ttf);
+        }
+        h1{
+            font-family: myFont;
+            text-align: center;
+        }
+
+        body{
+            background: url("images/bg.jpg");
+            /*background: url("images/table.jpg");*/
+        }
+
+        #game{
+            margin-left: auto;
+            text-align: center;
+        }
+
+        .card{
+            left: 500px;
+            width:80px;
+            height:120px;
+            border:1px solid black;
+            border-radius: 10px;
+            position: absolute;
+            transition:all 2s;      /*过渡效果时间*/
+            -webkit-perspective:600;    /*增强透视感*/
+        }
+        .back{
+            /*border:10px solid red;*/
+            width:80px;
+            height:120px;
+            background: url("images/deck.png") 0 -480px;
+            position: absolute;
+            /*z-index:999;*/
+            -webkit-transition: transform 2s;
+            backface-visibility:hidden;
+        }
+        .face{
+            /*border:1px solid blue;*/
+            width: 100%;
+            height: 100%;
+            background: url("images/deck.png");
+            transform:rotateY(180deg);
+            -webkit-transition: transform 2s;
+            backface-visibility:hidden;         /*隐藏被旋转的div元素的背面：*/
+        }
+        .flipped .back{
+            transform:rotateY(-180deg);
+
+        }
+        .flipped .face{
+            transform:rotateY(0deg);
+        }
+
+        .card1{
+            background-position: -960px 0;
+        }
+        .card2{
+            background-position: -880px -240px;
+        }
+        .card3{
+            background-position: -800px -120px;
+        }
+        .card4{
+            background-position: -800px -240px;
+        }
+        .card5{
+            background-position: -960px -360px;
+        }
+        .card6{
+            background-position: -720px -360px;
+        }
+        #start{
+            width: 100px;
+            height: 25px;
+            border-radius: 8px;
+        }
+
+    </style>
+    <script src="scripts/jquery-1.10.2.min.js"></script>
+    <script>
+
+        var gameCounter;    //游戏计时器
+        var second=0;        //秒
+        var minute=0;      //分
+        var deck=['card1','card1',
+            'card2','card2','card3','card3',
+                'card4','card4','card5','card5','card6','card6'];
+        var isStart=false;
+
+        function registerCardClick(){       //注册卡片点击事件
+            $(".card").click(function(){
+                if(isStart){
+                    if($(".flipped").length<2){             //被翻转的卡片数小于2才可以继续翻转
+                        $(this).toggleClass("flipped");
+                        if($(".flipped").length==2){
+                            var card1Name=($(".flipped .face").first()[0].className);
+                            var card2Name=($(".flipped .face").last()[0].className);
+                            if(card1Name==card2Name){       //两张相同卡片,可以消除
+                                var counter=setInterval(removeCard,1200);    //等待一会再执行，否则看不到翻转效果就被清除
+                                function removeCard(){
+                                    $(".flipped").remove();
+                                    clearInterval(counter);
+                                    if($("#cards")[0].children.length<=0){      //判断是否还有其他卡片存在,没有则游戏结束
+                                        isStart=false;
+                                        clearInterval(gameCounter);
+                                        alert("游戏完成 ，用时："+minute+"分"+second+"秒");
+                                        second=0;
+                                        minute=0;
+                                        $("#showTime").text("游戏时间: ");    //初始游戏时间
+                                        var cardHtml="<div class='card'><div class='back'></div><div class='face'></div></div>";
+                                        document.getElementById("cards").innerHTML=cardHtml;  //向html中插入一个card div,实现游戏可以重复开始
+                                        registerCardClick();
+                                    }
+                                }
+
+                            }else{                   //两张不同卡片,不能消除
+                                var counter=setInterval(removeFlipped,1200);
+                                function removeFlipped(){
+                                    $(".flipped").removeClass("flipped");
+                                    clearInterval(counter);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        $(function(){
+            registerCardClick();
+            $("#start").click(function() {
+                if (!isStart){
+                    isStart=true;
+                    for (var i = 0; i <= 10; i++) {
+                        $(".card").first().clone(true).appendTo($("#cards"))
+                        /*克隆card*/
+                        $(".card").each(function (i) {
+                            if (i % 4 == 0) {
+                                $(this).css({
+                                    "left": 500,          //对每张卡片定位
+                                    "top": ($(this).height() + 130 * Math.floor(i / 4))
+                                });
+                            } else {
+                                $(this).css({
+                                    "left": ($(this).width() + 20) * (i % 4) + 500,          //对每张卡片定位
+                                    "top": ($(this).height() + 130 * Math.floor(i / 4))
+                                });
+                            }
+                        });
+                    }
+
+                    deck.sort(function () {
+                        return 0.5 - Math.random();   //对卡片进行随机排序
+                    });
+                    //            deck.sort();
+                    $(".face").each(function (index) {
+                        var pattern = deck[index];
+                        $(this).addClass(pattern);          //给每张卡片添加花色
+                    });
+
+                    gameCounter = setInterval(countTime, 1000);    //根据时间间隔来执行计时，定时函数
+
+                }
+            });
+
+        });
+
+        function countTime(){
+            second++;
+            if(second>60){
+                minute++;
+                second=0;
+            }
+            $("#showTime").text("游戏时间: "+minute+":"+second);
+        }
+
+    </script>
+</head>
+
+<body>
+    <div id="game">
+        <button id="start">开始游戏</button>
+        <!--<button id="begin">begin</button>-->
+        <!--<button id="over">over</button>-->
+        <span id="showTime" style="color: white"> 游戏时间: </span>
+        <div id="cards">
+            <div class="card">
+            <div class="back"></div>
+            <div class="face"></div>
+        </div>
+        </div>
+    </div>
+</body>
+</html>
